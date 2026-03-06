@@ -95,7 +95,11 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
 .tree-toggle.open { transform:rotate(90deg); }
 .tree-toggle.leaf { background:transparent; border-color:transparent; color:transparent; cursor:default; }
 .tn { color:#8B3A0F; font-weight:600; } .tb { color:var(--brand-dark); font-weight:700; }
-.an { color:#1565C0; } .av { color:#2E7D32; } .tx { color:#555; }
+.an { color:#1565C0; }
+.av { color:#2E7D32; cursor:text; border-radius:2px; }
+.av:hover { background:rgba(46,125,50,0.08); }
+.tx { color:#555; cursor:text; border-radius:2px; }
+.tx:hover { background:rgba(202,119,2,0.08); }
 .match-node > .tree-node-line { background:var(--match-hl) !important; outline:1.5px solid var(--match-hl-border) !important; }
 .children { display:block; } .children.collapsed { display:none; }
 .xml-status { padding:5px 14px; background:var(--surface); border-top:1px solid var(--border); font-size:11px; color:var(--text3); display:flex; align-items:center; gap:8px; flex-shrink:0; }
@@ -108,16 +112,38 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
 
 /* XPath input section */
 .xpath-input-section { background:var(--surface); border-bottom:1.5px solid var(--border); flex-shrink:0; position:relative; }
-.xpath-input-row { display:flex; gap:7px; align-items:center; padding:10px 14px 10px; }
+.xpath-input-row { display:flex; gap:7px; align-items:flex-start; padding:10px 14px 10px; }
+
+/* Textarea wrapper — holds textarea + inline clear/copy icons */
+.xpath-ta-wrap { flex:1; position:relative; display:flex; align-items:flex-start; }
 #xpath-input {
-  flex:1; font-family:'JetBrains Mono',monospace; font-size:13px;
-  padding:8px 11px; border:1.5px solid var(--border2);
+  width:100%; font-family:'JetBrains Mono',monospace; font-size:13px;
+  padding:8px 58px 8px 11px;   /* right room for the 2 inline icons */
+  border:1.5px solid var(--border2);
   border-radius:var(--radius-sm); background:var(--surface2); color:var(--text);
   outline:none; transition:border-color 0.15s, background 0.15s;
+  resize:none; min-height:40px; max-height:120px; overflow-y:auto;
+  line-height:1.55; box-sizing:border-box;
 }
 #xpath-input:focus       { border-color:var(--brand); background:var(--surface); }
 #xpath-input.xpath-ok   { border-color:var(--success) !important; background:var(--success-bg); }
 #xpath-input.xpath-err  { border-color:var(--error)   !important; background:var(--error-bg); }
+
+/* Inline icons sitting inside the textarea on the right */
+.xpath-ta-actions {
+  position:absolute; top:6px; right:5px;
+  display:flex; flex-direction:column; gap:3px;
+}
+.xpath-ta-btn {
+  width:22px; height:22px; border-radius:4px; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:transparent; color:var(--text3); transition:all 0.13s; padding:0;
+}
+.xpath-ta-btn:hover { background:var(--brand-muted); color:var(--brand-dark); }
+.xpath-ta-btn.hidden { display:none; }
+
+/* Buttons on the right side of the textarea row */
+.xpath-row-btns { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
 
 /* ── Autocomplete dropdown ── */
 .ac-dropdown {
@@ -178,6 +204,23 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
 .feedback-fix-label { font-size:11px; font-weight:700; color:var(--fix-text); text-transform:uppercase; letter-spacing:0.4px; }
 .feedback-fix-text  { font-size:12px; color:var(--fix-text); line-height:1.5; margin-top:2px; }
 .feedback-fix-code  { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:11px; background:#dbeafe; padding:1px 6px; border-radius:3px; margin:2px 2px 0 0; }
+
+/* ── Tooltip ── */
+[data-tip] { position:relative; }
+[data-tip]::after {
+  content: attr(data-tip);
+  position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
+  background:#1a1208; color:#fff; font-size:10px; font-weight:500;
+  padding:4px 8px; border-radius:4px; white-space:nowrap;
+  pointer-events:none; opacity:0; transition:opacity 0.15s;
+  font-family:'DM Sans',sans-serif; z-index:9999; letter-spacing:0.2px;
+}
+[data-tip]::before {
+  content:''; position:absolute; bottom:calc(100% + 2px); left:50%; transform:translateX(-50%);
+  border:4px solid transparent; border-top-color:#1a1208;
+  pointer-events:none; opacity:0; transition:opacity 0.15s; z-index:9999;
+}
+[data-tip]:hover::after, [data-tip]:hover::before { opacity:1; }
 
 /* ── Auto XPath ── */
 .auto-xpath-section { background:var(--brand-pale); border-bottom:1.5px solid var(--brand-muted); border-top:1.5px solid var(--border); padding:9px 14px 11px; flex-shrink:0; }
@@ -281,17 +324,29 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
     <!-- Input + autocomplete + feedback -->
     <div class="xpath-input-section" id="xpath-input-section">
       <div class="xpath-input-row">
-        <input type="text" id="xpath-input" autocomplete="off" spellcheck="false"
-          placeholder="Type XPath… e.g. //book[ends-with(title,'9')]"
-          oninput="onXPathInput(this.value)"
-          onkeydown="handleXPathKey(event)"
-          onfocus="showAcIfNeeded()"
-          onblur="scheduleHideAc()">
-        <button class="btn btn-primary" onclick="evaluateXPath()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Evaluate
-        </button>
-        <button class="btn btn-ghost" onclick="clearXPathFull()">Clear</button>
+        <div class="xpath-ta-wrap">
+          <textarea id="xpath-input" autocomplete="off" spellcheck="false" rows="1"
+            placeholder="Type XPath… e.g. //book[ends-with(title,'9')]"
+            oninput="onXPathInput(this.value); autoGrowXpTa(this)"
+            onkeydown="handleXPathKey(event)"
+            onfocus="showAcIfNeeded()"
+            onblur="scheduleHideAc()"></textarea>
+          <!-- Inline clear + copy icons inside the textarea -->
+          <div class="xpath-ta-actions">
+            <button class="xpath-ta-btn hidden" id="xp-clear-btn" data-tip="Clear" onclick="clearXPathFull()" tabindex="-1">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <button class="xpath-ta-btn hidden" id="xp-copy-btn" data-tip="Copy XPath" onclick="copyXPathInput()" tabindex="-1">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="xpath-row-btns">
+          <button class="btn btn-primary" onclick="evaluateXPath()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Evaluate
+          </button>
+        </div>
       </div>
 
       <!-- Autocomplete dropdown -->
@@ -308,24 +363,24 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
       <div class="auto-xpath-lbl">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         Auto-Generated XPath
-        <small>— click any node in Tree view</small>
+        <small>— click any node in Tree view to generate XPath</small>
       </div>
       <div class="xpath-gen-row">
         <div class="xpath-gen-tag">Relative</div>
         <div class="xpath-val-box" id="relative-xpath"></div>
         <div class="xpath-gen-btns">
-          <button class="btn btn-icon" title="Copy" onclick="copyXP('relative')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
-          <button class="btn btn-icon" title="Edit" onclick="editXP('relative')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-          <button class="btn btn-icon" title="Use" onclick="useXP('relative')" style="color:var(--brand)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+          <button class="btn btn-icon" data-tip="Copy XPath" onclick="copyXP('relative')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <button class="btn btn-icon" data-tip="Edit XPath" onclick="editXP('relative')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button class="btn btn-icon" data-tip="Send to Evaluator &amp; run" onclick="useXP('relative')" style="color:var(--brand)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
       </div>
       <div class="xpath-gen-row">
         <div class="xpath-gen-tag">Absolute</div>
         <div class="xpath-val-box" id="absolute-xpath"></div>
         <div class="xpath-gen-btns">
-          <button class="btn btn-icon" title="Copy" onclick="copyXP('absolute')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
-          <button class="btn btn-icon" title="Edit" onclick="editXP('absolute')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-          <button class="btn btn-icon" title="Use" onclick="useXP('absolute')" style="color:var(--brand)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+          <button class="btn btn-icon" data-tip="Copy XPath" onclick="copyXP('absolute')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+          <button class="btn btn-icon" data-tip="Edit XPath" onclick="editXP('absolute')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button class="btn btn-icon" data-tip="Send to Evaluator &amp; run" onclick="useXP('absolute')" style="color:var(--brand)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
       </div>
     </div>
@@ -345,6 +400,23 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Textarea auto-grow ──
+function autoGrowXpTa(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  // Show/hide inline icons based on content
+  const hasVal = ta.value.trim().length > 0;
+  document.getElementById('xp-clear-btn').classList.toggle('hidden', !hasVal);
+  document.getElementById('xp-copy-btn').classList.toggle('hidden', !hasVal);
+}
+
+// ── Copy the XPath textarea value ──
+function copyXPathInput() {
+  const val = document.getElementById('xpath-input').value.trim();
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(() => showToast('✓ XPath copied'));
+}
+
 // ═══════════════════════════════════════════════════
 // AUTOCOMPLETE DATA
 // ═══════════════════════════════════════════════════
@@ -745,8 +817,8 @@ function buildNode(node,depth){
   const tog=document.createElement('span');tog.className='tree-toggle'+(hasKids?' open':' leaf');tog.textContent='▶';line.appendChild(tog);
   const span=document.createElement('span');
   let h=`<span class="tb">&lt;</span><span class="tn">${esc(node.tagName)}</span>`;
-  for(const a of node.attributes)h+=` <span class="an">${esc(a.name)}</span>=<span class="av">"${esc(a.value)}"</span>`;
-  if(!hasKids){if(directText)h+=`<span class="tb">&gt;</span><span class="tx">${esc(directText.length>60?directText.slice(0,60)+'…':directText)}</span><span class="tb">&lt;/${esc(node.tagName)}&gt;</span>`;else h+=`<span class="tb"> /&gt;</span>`;}else h+=`<span class="tb">&gt;</span>`;
+  for(const a of node.attributes)h+=` <span class="an">${esc(a.name)}</span>=<span class="av" ondblclick="selectTextOnDblClick(event)">"${esc(a.value)}"</span>`;
+  if(!hasKids){if(directText)h+=`<span class="tb">&gt;</span><span class="tx" ondblclick="selectTextOnDblClick(event)">${esc(directText.length>60?directText.slice(0,60)+'…':directText)}</span><span class="tb">&lt;/${esc(node.tagName)}&gt;</span>`;else h+=`<span class="tb"> /&gt;</span>`;}else h+=`<span class="tb">&gt;</span>`;
   span.innerHTML=h;line.appendChild(span);
   const kids=document.createElement('div');kids.className='children';
   if(hasKids){for(const ch of childEls)kids.appendChild(buildNode(ch,depth+1));const cl=document.createElement('div');cl.className='tree-node-line';cl.style.cursor='default';for(let i=0;i<depth;i++){const s=document.createElement('span');s.className='tree-indent';cl.appendChild(s);}const si=document.createElement('span');si.className='tree-indent';cl.appendChild(si);const cs=document.createElement('span');cs.innerHTML=`<span class="tb">&lt;/${esc(node.tagName)}&gt;</span>`;cl.appendChild(cs);kids.appendChild(cl);}
@@ -754,6 +826,21 @@ function buildNode(node,depth){
   wrap.appendChild(line);wrap.appendChild(kids);return wrap;
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Double-click to select text content of a tree span
+function selectTextOnDblClick(e) {
+  e.stopPropagation();
+  const el = e.currentTarget;
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  // Auto-copy and show subtle toast
+  try {
+    navigator.clipboard.writeText(el.textContent.replace(/^"|"$/g,'')).then(()=>showToast('✓ Value copied'));
+  } catch(_) {}
+}
 
 // ═══════════════════════════════════════════════════
 // NODE SELECT + XPATH GENERATION
@@ -870,7 +957,13 @@ function clearEvalResult(){
   matchedNodes.clear();
   document.querySelectorAll('.match-node').forEach(el=>el.classList.remove('match-node'));
 }
-function clearXPathFull(){document.getElementById('xpath-input').value='';clearEvalResult();hideAc();}
+function clearXPathFull(){
+  const ta = document.getElementById('xpath-input');
+  ta.value = ''; ta.style.height = 'auto';
+  document.getElementById('xp-clear-btn').classList.add('hidden');
+  document.getElementById('xp-copy-btn').classList.add('hidden');
+  clearEvalResult(); hideAc();
+}
 function clearAutoXPath(){document.getElementById('relative-xpath').textContent='';document.getElementById('absolute-xpath').textContent='';}
 
 function svgOk() {return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>`;}
