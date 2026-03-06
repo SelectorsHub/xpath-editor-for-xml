@@ -64,6 +64,17 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 html { width:100% !important; max-width:100% !important; }
 body { width:100% !important; max-width:100% !important; }
 
+/* ── Editor wrapper border for iframe embedding ── */
+.editor-wrap {
+  display:flex; flex-direction:column; flex:1; min-height:0;
+  border:2px solid var(--border2);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 4px 24px rgba(202,119,2,0.10), 0 1px 4px rgba(0,0,0,0.06);
+  margin:10px;
+}
+body { padding:0; background:var(--bg); }
+
 /* ── Header ── */
 header { background:var(--surface); border-bottom:3px solid var(--brand); padding:0 28px; height:72px; width:100%; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; box-shadow:0 3px 14px rgba(202,119,2,0.12); }
 .logo { display:flex; align-items:center; gap:14px; }
@@ -280,8 +291,9 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
 .placeholder-msg { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:10px; color:var(--text3); text-align:center; padding:20px; }
 .placeholder-msg p { font-size:12.5px; line-height:1.7; }
 
-.toast { position:fixed; bottom:16px; right:16px; background:#1a1208; color:#fff; padding:9px 15px; border-radius:var(--radius-sm); font-size:12.5px; font-weight:500; opacity:0; transform:translateY(6px); transition:all 0.2s; pointer-events:none; z-index:9999; }
+.toast { position:fixed; bottom:16px; right:16px; background:#1a1208; color:#fff; padding:9px 15px; border-radius:var(--radius-sm); font-size:12.5px; font-weight:500; opacity:0; transform:translateY(6px); transition:all 0.2s; pointer-events:none; z-index:9999; display:flex; align-items:center; gap:6px; }
 .toast.show { opacity:1; transform:translateY(0); }
+.toast.toast-copy { background:#005c43; border:1.5px solid var(--success); }
 
 ::-webkit-scrollbar { width:5px; height:5px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -290,6 +302,7 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
 </style>
 </head>
 <body>
+<div class="editor-wrap">
 
 <header>
   <div class="logo">
@@ -401,7 +414,7 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
         <small>— click any node in Tree view to generate XPath</small>
       </div>
       <div class="xpath-gen-row">
-        <div class="xpath-gen-tag">Relative XPath</div>
+        <div class="xpath-gen-tag">Rel XPath</div>
         <div class="xpath-val-box" id="relative-xpath"></div>
         <div class="xpath-gen-btns">
           <button class="btn btn-icon" data-tip="Copy XPath" onclick="copyXP('relative')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
@@ -410,7 +423,7 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
         </div>
       </div>
       <div class="xpath-gen-row">
-        <div class="xpath-gen-tag">Absolute XPath</div>
+        <div class="xpath-gen-tag">Abs XPath</div>
         <div class="xpath-val-box" id="absolute-xpath"></div>
         <div class="xpath-gen-btns">
           <button class="btn btn-icon" data-tip="Copy XPath" onclick="copyXP('absolute')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
@@ -432,6 +445,7 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
     </div>
   </div>
 </main>
+</div><!-- /.editor-wrap -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -449,7 +463,7 @@ function autoGrowXpTa(ta) {
 function copyXPathInput() {
   const val = document.getElementById('xpath-input').value.trim();
   if (!val) return;
-  navigator.clipboard.writeText(val).then(() => showToast('✓ XPath copied'));
+  navigator.clipboard.writeText(val).then(() => showToast('✓ Copied!', 'copy'));
 }
 
 // ═══════════════════════════════════════════════════
@@ -873,7 +887,7 @@ function selectTextOnDblClick(e) {
   sel.addRange(range);
   // Auto-copy and show subtle toast
   try {
-    navigator.clipboard.writeText(el.textContent.replace(/^"|"$/g,'')).then(()=>showToast('✓ Value copied'));
+    navigator.clipboard.writeText(el.textContent.replace(/^"|"$/g,'')).then(()=>showToast('✓ Copied!','copy'));
   } catch(_) {}
 }
 
@@ -1009,12 +1023,19 @@ function svgFix(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="
 // ═══════════════════════════════════════════════════
 // COPY / EDIT / USE
 // ═══════════════════════════════════════════════════
-function copyXP(type){const txt=document.getElementById(type+'-xpath').textContent.trim();if(!txt){showToast('No XPath yet — click a node first');return;}navigator.clipboard.writeText(txt).then(()=>showToast('✓ Copied'));}
+function copyXP(type){const txt=document.getElementById(type+'-xpath').textContent.trim();if(!txt){showToast('No XPath yet — click a node first');return;}navigator.clipboard.writeText(txt).then(()=>{showToast('✓ Copied!','copy');});}
 function editXP(type){const el=document.getElementById(type+'-xpath');if(!el.textContent.trim()){showToast('No XPath to edit');return;}if(el.contentEditable==='true'){el.contentEditable='false';showToast('✓ Saved');}else{['relative-xpath','absolute-xpath'].forEach(id=>{document.getElementById(id).contentEditable='false';});el.contentEditable='true';el.focus();const r=document.createRange();r.selectNodeContents(el);r.collapse(false);const s=window.getSelection();s.removeAllRanges();s.addRange(r);showToast('Editing — click ✏ again to save');}}
 function useXP(type){const txt=document.getElementById(type+'-xpath').textContent.trim();if(!txt){showToast('No XPath yet — click a node first');return;}document.getElementById('xpath-input').value=txt;evaluateXPath();}
 
 let toastTmr;
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTmr);toastTmr=setTimeout(()=>t.classList.remove('show'),2200);}
+function showToast(msg, type){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.toggle('toast-copy', type==='copy');
+  t.classList.add('show');
+  clearTimeout(toastTmr);
+  toastTmr=setTimeout(()=>{t.classList.remove('show','toast-copy');},2200);
+}
 
 // ═══════════════════════════════════════════════════
 // INIT
