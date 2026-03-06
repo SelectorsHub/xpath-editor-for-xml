@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<style>
+  /* WordPress iframe full-width fix */
+  html, body { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important; overflow-x: hidden !important; }
+</style>
 <title>XPath Editor – SelectorsHub</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -22,10 +26,19 @@
   --radius-sm: 6px; --radius: 10px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+html, body { width:100%; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; height:100vh; display:flex; flex-direction:column; overflow:hidden; max-width:100%; }
+
+/* WordPress embed mode: when inside an iframe, fill 100% of container */
+@media screen {
+  :root { --embed-height: 100vh; }
+}
+/* Force full width in any container */
+html { width:100% !important; max-width:100% !important; }
+body { width:100% !important; max-width:100% !important; }
 
 /* ── Header ── */
-header { background:var(--surface); border-bottom:3px solid var(--brand); padding:0 28px; height:72px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; box-shadow:0 3px 14px rgba(202,119,2,0.12); }
+header { background:var(--surface); border-bottom:3px solid var(--brand); padding:0 28px; height:72px; width:100%; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; box-shadow:0 3px 14px rgba(202,119,2,0.12); }
 .logo { display:flex; align-items:center; gap:14px; }
 .logo-icon { width:44px; height:44px; background:var(--brand); border-radius:11px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:20px; font-weight:900; font-family:'JetBrains Mono',monospace; box-shadow:0 2px 8px rgba(202,119,2,0.35); letter-spacing:-1px; }
 .logo-text { display:flex; flex-direction:column; gap:1px; }
@@ -36,10 +49,10 @@ header { background:var(--surface); border-bottom:3px solid var(--brand); paddin
 .header-badge { font-size:11px; font-weight:600; background:var(--brand-pale); color:var(--brand-dark); border:1.5px solid var(--brand-muted); padding:4px 12px; border-radius:20px; }
 
 /* ── Layout ── */
-main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overflow:hidden; }
+main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overflow:hidden; width:100%; }
 .panel { display:flex; flex-direction:column; border-right:1.5px solid var(--border); overflow:hidden; }
 .panel:last-child { border-right:none; }
-.panel-header { background:var(--surface); border-bottom:1.5px solid var(--border); padding:8px 14px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.panel-header { background:var(--surface); border-bottom:1.5px solid var(--border); padding:0 14px; height:44px; min-height:44px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
 .panel-title { font-size:11px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--text2); display:flex; align-items:center; gap:6px; }
 .panel-title svg { color:var(--brand); }
 .panel-actions { display:flex; gap:5px; align-items:center; }
@@ -901,5 +914,22 @@ const SAMPLE=`<?xml version="1.0" encoding="UTF-8"?>
 </bookstore>`;
 document.getElementById('tree-source-ta').value='';
 </script>
+<!--
+  ═══════════════════════════════════════════════════
+  WORDPRESS EMBED — use this iframe snippet:
+
+  <iframe
+    src="https://YOUR-USERNAME.github.io/xpath-editor/"
+    width="100%"
+    height="750"
+    frameborder="0"
+    scrolling="no"
+    style="width:100%;max-width:100%;border:none;border-radius:8px;display:block;">
+  </iframe>
+
+  TIP: Set height="750" or higher so the full tool is visible.
+  The tool automatically fills 100% of the iframe width.
+  ═══════════════════════════════════════════════════
+-->
 </body>
 </html>
