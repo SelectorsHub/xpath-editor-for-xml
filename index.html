@@ -460,6 +460,28 @@ main { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:0; overfl
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Safe clipboard helper (works in iframes without clipboard-write permission) ──
+function copyToClipboard(text, onSuccess) {
+  // Try modern API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(() => execCopy(text, onSuccess));
+  } else {
+    execCopy(text, onSuccess);
+  }
+}
+function execCopy(text, onSuccess) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (onSuccess) onSuccess();
+  } catch(e) { showToast('⚠ Copy not available'); }
+}
+
 // ── Textarea auto-grow ──
 function autoGrowXpTa(ta) {
   ta.style.height = 'auto';
@@ -475,7 +497,7 @@ function copyXPathInput() {
   const val = document.getElementById('xpath-input').value.trim();
   if (!val) return;
   const btn = document.getElementById('xp-copy-btn');
-  navigator.clipboard.writeText(val).then(() => flashTip(btn, 'Copied!'));
+  copyToClipboard(val, () => flashTip(btn, 'Copied!'));
 }
 
 // ═══════════════════════════════════════════════════
@@ -899,7 +921,7 @@ function selectTextOnDblClick(e) {
   sel.addRange(range);
   // Auto-copy and show subtle toast
   try {
-    navigator.clipboard.writeText(el.textContent.replace(/^"|"$/g,'')).then(()=>showToast('✓ Copied!','copy'));
+    copyToClipboard(el.textContent.replace(/^"|"$/g,''), ()=>showToast('✓ Copied!','copy'));
   } catch(_) {}
 }
 
@@ -1035,7 +1057,7 @@ function svgFix(){return `<svg width="14" height="14" viewBox="0 0 24 24" fill="
 // ═══════════════════════════════════════════════════
 // COPY / EDIT / USE
 // ═══════════════════════════════════════════════════
-function copyXP(type){const txt=document.getElementById(type+'-xpath').textContent.trim();if(!txt){showToast('No XPath yet — click a node first');return;}const btn=event.currentTarget;navigator.clipboard.writeText(txt).then(()=>{flashTip(btn,'Copied!');});}
+function copyXP(type){const txt=document.getElementById(type+'-xpath').textContent.trim();if(!txt){showToast('No XPath yet — click a node first');return;}const btn=event.currentTarget;copyToClipboard(txt,()=>{flashTip(btn,'Copied!');});}
 
 // Flash a temporary tooltip label on any button
 function flashTip(btn, label) {
