@@ -373,7 +373,10 @@ main{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;overflow:hid
 <!-- HEADER -->
 <header>
   <div class="logo">
-    <div class="logo-icon">XP</div>
+    <img src="https://selectorshub.com/wp-content/uploads/2026/03/xpath-tester-icon.png"
+         alt="XPath Tester for XML"
+         style="height:44px;width:44px;display:block;flex-shrink:0;"
+         onerror="this.style.display='none'">
     <div class="logo-text">
       <span class="logo-title">XPath Tester for XML</span>
       <span class="logo-sub">XPath 1.0 · 2.0 · 3.0 · 3.1 Evaluator</span>
@@ -776,7 +779,6 @@ let _dragDepth = 0;
   body.addEventListener('dragover', onOver);
   body.addEventListener('dragleave', onLeave);
   body.addEventListener('drop', onDrop);
-  // Reset drag depth if user drags out of window
   document.addEventListener('dragleave', e => {
     if (e.clientX === 0 && e.clientY === 0) {
       _dragDepth = 0;
@@ -798,7 +800,6 @@ function switchMobileTab(tab) {
   document.getElementById('mob-tab-xpath').classList.toggle('active', tab === 'xpath');
   const panelXml   = document.getElementById('panel-xml');
   const panelXpath = document.getElementById('panel-xpath');
-  // Only apply on mobile (flex vs none)
   if (window.innerWidth <= 768) {
     panelXml.classList.toggle('mob-active', tab === 'xml');
     panelXpath.classList.toggle('mob-active', tab === 'xpath');
@@ -806,14 +807,12 @@ function switchMobileTab(tab) {
 }
 window.addEventListener('resize', () => {
   if (window.innerWidth > 768) {
-    // Restore both panels on desktop
     document.getElementById('panel-xml').classList.add('mob-active');
     document.getElementById('panel-xpath').classList.add('mob-active');
   } else {
     switchMobileTab(_mobileActive);
   }
 });
-// Init: make xpath panel visible on desktop, only xml on mobile
 (function() {
   const pxp = document.getElementById('panel-xpath');
   if (window.innerWidth > 768) pxp.classList.add('mob-active');
@@ -848,7 +847,6 @@ function autoGrowXpTa(ta) {
   ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
   document.getElementById('xp-clear-btn').classList.toggle('hidden', !ta.value.trim().length);
 }
-// FIX: accept button element as parameter instead of relying on global `event`
 function copyXPathInput(btn) {
   const val = document.getElementById('xpath-input').value.trim();
   if (!val) return;
@@ -1002,8 +1000,6 @@ function diagnoseXPathError(xp, rawErr) {
 // XPATH POLYFILL ENGINE  (1.0 / 2.0 / 3.0 / 3.1)
 // ════════════════════════════════════════════════════════
 const XPoly = {
-
-  // ── Helper: parse function arguments ─────────────────
   parseFnArgs(expr, oi) {
     let d = 0, i = oi + 1, inS = false, qc = '', args = [], cur = '';
     while (i < expr.length) {
@@ -1021,8 +1017,6 @@ const XPoly = {
     }
     return null;
   },
-
-  // ── Split args respecting nesting ────────────────────
   splitArgs(s) {
     const p = []; let cur = '', inS = false, qc = '', d = 0;
     for (const ch of s) {
@@ -1036,61 +1030,50 @@ const XPoly = {
     if (cur) p.push(cur);
     return p;
   },
-
-  // ── Rewrite a single function call ───────────────────
   rewrite(fn, args) {
     const [a0 = '', a1 = '', a2 = ''] = args;
     switch (fn) {
-      // XPath 2.0
-      case 'ends-with':
-        return `substring(${a0},string-length(${a0})-string-length(${a1})+1)=${a1}`;
-      case 'lower-case':  return `_lc_(${a0})`;
-      case 'upper-case':  return `_uc_(${a0})`;
-      case 'matches':     return `_matches_(${a0},${a1}${a2?','+a2:''})`;
-      case 'avg':         return `(sum(${a0}) div count(${a0}))`;
-      case 'min':         return `_min_(${a0})`;
-      case 'max':         return `_max_(${a0})`;
-      case 'exists':      return `(count(${a0}) > 0)`;
-      case 'empty':       return `(count(${a0}) = 0)`;
-      case 'contains-token':
-        return `contains(concat(' ',normalize-space(${a0}),' '),concat(' ',normalize-space(${a1}),' '))`;
-      case 'head':        return `(${a0})[1]`;
-      // XPath 3.0
-      case 'abs':         return `_abs_(${a0})`;
+      case 'ends-with': return `substring(${a0},string-length(${a0})-string-length(${a1})+1)=${a1}`;
+      case 'lower-case': return `_lc_(${a0})`;
+      case 'upper-case': return `_uc_(${a0})`;
+      case 'matches': return `_matches_(${a0},${a1}${a2?','+a2:''})`;
+      case 'avg': return `(sum(${a0}) div count(${a0}))`;
+      case 'min': return `_min_(${a0})`;
+      case 'max': return `_max_(${a0})`;
+      case 'exists': return `(count(${a0}) > 0)`;
+      case 'empty': return `(count(${a0}) = 0)`;
+      case 'contains-token': return `contains(concat(' ',normalize-space(${a0}),' '),concat(' ',normalize-space(${a1}),' '))`;
+      case 'head': return `(${a0})[1]`;
+      case 'abs': return `_abs_(${a0})`;
       case 'encode-for-uri': return `_encuri_(${a0})`;
-      case 'iri-to-uri':  return `_iriuri_(${a0})`;
+      case 'iri-to-uri': return `_iriuri_(${a0})`;
       case 'escape-html-uri': return `_eschtml_(${a0})`;
       case 'normalize-unicode': return `_normuni_(${a0}${a1?','+a1:''})`;
       case 'string-to-codepoints': return `_s2cp_(${a0})`;
       case 'codepoints-to-string': return `_cp2s_(${a0})`;
       case 'has-children': return `(count((${a0 || '.'})/child::*) > 0)`;
-      case 'tokenize':    return `_tokenize_(${a0},${a1}${a2?','+a2:''})`;
-      case 'serialize':   return `_serialize_(${a0})`;
+      case 'tokenize': return `_tokenize_(${a0},${a1}${a2?','+a2:''})`;
+      case 'serialize': return `_serialize_(${a0})`;
       case 'generate-id': return `_genid_(${a0 || '.'})`;
-      case 'path':        return `_path_(${a0 || '.'})`;
-      // Math namespace
-      case 'math:sqrt':   return `_math_sqrt_(${a0})`;
-      case 'math:pow':    return `_math_pow_(${a0},${a1})`;
-      case 'math:log':    return `_math_log_(${a0})`;
-      case 'math:log10':  return `_math_log10_(${a0})`;
-      case 'math:pi':     return `3.141592653589793`;
-      case 'math:exp':    return `_math_exp_(${a0})`;
-      case 'math:sin':    return `_math_sin_(${a0})`;
-      case 'math:cos':    return `_math_cos_(${a0})`;
-      case 'math:tan':    return `_math_tan_(${a0})`;
+      case 'path': return `_path_(${a0 || '.'})`;
+      case 'math:sqrt': return `_math_sqrt_(${a0})`;
+      case 'math:pow': return `_math_pow_(${a0},${a1})`;
+      case 'math:log': return `_math_log_(${a0})`;
+      case 'math:log10': return `_math_log10_(${a0})`;
+      case 'math:pi': return `3.141592653589793`;
+      case 'math:exp': return `_math_exp_(${a0})`;
+      case 'math:sin': return `_math_sin_(${a0})`;
+      case 'math:cos': return `_math_cos_(${a0})`;
+      case 'math:tan': return `_math_tan_(${a0})`;
       default: return null;
     }
   },
-
-  // ── All function names to intercept ──────────────────
   allFns: ['ends-with','lower-case','upper-case','matches','avg','min','max',
            'exists','empty','contains-token','head','abs','encode-for-uri',
            'iri-to-uri','escape-html-uri','normalize-unicode','string-to-codepoints',
            'codepoints-to-string','has-children','tokenize','serialize','generate-id',
            'path','math:sqrt','math:pow','math:log','math:log10','math:pi',
            'math:exp','math:sin','math:cos','math:tan'],
-
-  // ── Transpile function calls ──────────────────────────
   transpileFns(expr) {
     let out = '', i = 0;
     outer: while (i < expr.length) {
@@ -1113,10 +1096,7 @@ const XPoly = {
     }
     return out;
   },
-
-  // ── Transpile || string concatenation operator ────────
   transpileConcat(expr) {
-    // Collect parts separated by || (outside strings/parens)
     const parts = [];
     let cur = '', inS = false, qc = '', d = 0, i = 0;
     while (i < expr.length) {
@@ -1134,14 +1114,9 @@ const XPoly = {
     if (parts.length === 1) return expr;
     return `concat(${parts.join(',')})`;
   },
-
-  // ── Transpile => arrow operator ───────────────────────
-  // expr => fn(args) → fn(expr, args)
   transpileArrow(expr) {
-    let out = '', i = 0, inS = false, qc = '', d = 0;
-    // We'll build a token stream and look for =>
     const tokens = [];
-    let cur = '';
+    let cur = '', i = 0, inS = false, qc = '';
     while (i < expr.length) {
       const ch = expr[i];
       if (!inS && (ch === '"' || ch === "'")) { inS = true; qc = ch; cur += ch; }
@@ -1155,8 +1130,6 @@ const XPoly = {
     }
     if (cur.trim()) tokens.push({t:'expr', v:cur.trim()});
     if (!tokens.some(t => t.t === 'arrow')) return expr;
-
-    // Process: left => fn(args) means fn(left, args)
     let result = '';
     let pending = null;
     for (let j = 0; j < tokens.length; j++) {
@@ -1164,9 +1137,7 @@ const XPoly = {
       if (tok.t === 'expr' && tokens[j+1] && tokens[j+1].t === 'arrow') {
         pending = tok.v;
       } else if (tok.t === 'arrow') {
-        // skip, handled above
       } else if (tok.t === 'expr' && pending !== null) {
-        // tok.v should be fn-call like upper-case()
         const fnExpr = tok.v.trim();
         const parenIdx = fnExpr.indexOf('(');
         if (parenIdx >= 0) {
@@ -1184,8 +1155,6 @@ const XPoly = {
     }
     return result || expr;
   },
-
-  // ── Extract & replace _matches_ placeholders ─────────
   extractMatches(expr) {
     const calls = [];
     const cleaned = expr.replace(/_matches_\(([^)]*(?:\([^)]*\)[^)]*)*)\)/g, (_, inner) => {
@@ -1198,8 +1167,6 @@ const XPoly = {
     });
     return { calls, cleaned };
   },
-
-  // ── Extract JS-side special function calls ────────────
   extractJsFns(expr) {
     const jsFns = ['_lc_','_uc_','_abs_','_min_','_max_','_encuri_','_iriuri_',
                    '_eschtml_','_normuni_','_s2cp_','_cp2s_','_tokenize_',
@@ -1209,11 +1176,6 @@ const XPoly = {
     const calls = [];
     let cleaned = expr;
     for (const fn of jsFns) {
-      const re = new RegExp(fn.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\(', 'g');
-      let m;
-      const newExpr = [];
-      let last = 0;
-      // Use parseFnArgs manually
       cleaned = cleaned.replace(new RegExp(fn.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') +
           '\\(([^)]*(?:\\([^)]*\\)[^)]*)*)\\)', 'g'), (full, inner) => {
         calls.push({ fn, args: this.splitArgs(inner) });
@@ -1222,8 +1184,6 @@ const XPoly = {
     }
     return { calls, cleaned };
   },
-
-  // ── Resolve a node value for use in JS functions ─────
   resolveNodeVal(node, expr) {
     const e = expr.trim();
     if (e === '.' || e === 'text()' || e === '') return (node.textContent || '').trim();
@@ -1231,8 +1191,6 @@ const XPoly = {
     const child = node.querySelector(e.replace(/^[./]+/, ''));
     return child ? (child.textContent || '').trim() : (node.textContent || '').trim();
   },
-
-  // ── Apply JS-side match filter ────────────────────────
   applyFilter(nodes, calls) {
     return nodes.filter(n => calls.every(c => {
       try {
@@ -1241,8 +1199,6 @@ const XPoly = {
       } catch(e) { return false; }
     }));
   },
-
-  // ── Evaluate a JS function placeholder ───────────────
   evalJsFn(fn, args, doc, snap_r) {
     const a0 = (args[0] || '').trim().replace(/^['"]|['"]$/g, '');
     switch (fn) {
@@ -1260,35 +1216,12 @@ const XPoly = {
         return { type:'number', value: Math.max(...vals) };
       }
       case '_encuri_': return { type:'string', value: encodeURIComponent(a0) };
-      case '_iriuri_': {
-        try { return { type:'string', value: encodeURI(a0) }; }
-        catch(_) { return { type:'string', value: a0 }; }
-      }
+      case '_iriuri_': { try { return { type:'string', value: encodeURI(a0) }; } catch(_) { return { type:'string', value: a0 }; } }
       case '_eschtml_': return { type:'string', value: a0.replace(/[^!#-;=?-~]/g, c => encodeURIComponent(c)) };
-      case '_normuni_': {
-        const form = (args[1]||'NFC').replace(/^['"]|['"]$/g,'') || 'NFC';
-        try { return { type:'string', value: a0.normalize(form) }; }
-        catch(_) { return { type:'string', value: a0 }; }
-      }
-      case '_s2cp_': return {
-        type:'sequence',
-        items: Array.from(a0).map(c => ({ type:'number', value: c.codePointAt(0) }))
-      };
-      case '_cp2s_': {
-        const nums = a0.split(/[\s,]+/).filter(Boolean).map(Number);
-        try { return { type:'string', value: String.fromCodePoint(...nums) }; }
-        catch(_) { return { type:'string', value: '' }; }
-      }
-      case '_tokenize_': {
-        const str = a0;
-        const pat = (args[1]||'').trim().replace(/^['"]|['"]$/g,'') || '\\s+';
-        const flags = (args[2]||'').trim().replace(/^['"]|['"]$/g,'');
-        try {
-          const re = new RegExp(pat, flags.replace(/[^gims]/g,''));
-          const tokens = str.split(re).filter(t => t !== '');
-          return { type:'sequence', items: tokens.map(t => ({ type:'string', value:t })) };
-        } catch(_) { return { type:'sequence', items:[] }; }
-      }
+      case '_normuni_': { const form = (args[1]||'NFC').replace(/^['"]|['"]$/g,'') || 'NFC'; try { return { type:'string', value: a0.normalize(form) }; } catch(_) { return { type:'string', value: a0 }; } }
+      case '_s2cp_': return { type:'sequence', items: Array.from(a0).map(c => ({ type:'number', value: c.codePointAt(0) })) };
+      case '_cp2s_': { const nums = a0.split(/[\s,]+/).filter(Boolean).map(Number); try { return { type:'string', value: String.fromCodePoint(...nums) }; } catch(_) { return { type:'string', value: '' }; } }
+      case '_tokenize_': { const str = a0; const pat = (args[1]||'').trim().replace(/^['"]|['"]$/g,'') || '\\s+'; const flags = (args[2]||'').trim().replace(/^['"]|['"]$/g,''); try { const re = new RegExp(pat, flags.replace(/[^gims]/g,'')); const tokens = str.split(re).filter(t => t !== ''); return { type:'sequence', items: tokens.map(t => ({ type:'string', value:t })) }; } catch(_) { return { type:'sequence', items:[] }; } }
       case '_math_sqrt_': return { type:'number', value: Math.sqrt(parseFloat(a0)||0) };
       case '_math_pow_': return { type:'number', value: Math.pow(parseFloat(a0)||0, parseFloat((args[1]||'').replace(/^['"]|['"]$/g,'')||'1')) };
       case '_math_log_': return { type:'number', value: Math.log(parseFloat(a0)||0) };
@@ -1300,66 +1233,42 @@ const XPoly = {
       default: return null;
     }
   },
-
-  // ── Full transpile pipeline ───────────────────────────
   transpile(expr) {
     let out = this.transpileArrow(expr);
     out = this.transpileConcat(out);
     out = this.transpileFns(out);
     return out;
   },
-
-  // ── Process native XPathResult into unified format ────
   processResult(r) {
-    // IMPORTANT: Never access snapshotLength/iterateNext on wrong types —
-    // the browser throws even though the property exists on the object.
-    // Always branch on r.resultType numeric value:
-    //   1=NUMBER  2=STRING  3=BOOLEAN
-    //   4=UNORDERED_NODE_ITERATOR  5=ORDERED_NODE_ITERATOR
-    //   6=UNORDERED_NODE_SNAPSHOT  7=ORDERED_NODE_SNAPSHOT
-    //   8=ANY_UNORDERED_NODE  9=FIRST_ORDERED_NODE
     const t = r.resultType;
     if (t === XPathResult.NUMBER_TYPE)  return { type:'number',  value: r.numberValue,  nodes:null };
     if (t === XPathResult.STRING_TYPE)  return { type:'string',  value: r.stringValue,  nodes:null };
     if (t === XPathResult.BOOLEAN_TYPE) return { type:'boolean', value: r.booleanValue, nodes:null };
-    // Single-node types
     if (t === XPathResult.ANY_UNORDERED_NODE_TYPE || t === XPathResult.FIRST_ORDERED_NODE_TYPE) {
       const n = r.singleNodeValue;
       return { type:'nodeset', nodes: n ? [n] : [], value:null };
     }
-    // Snapshot types (safe to use snapshotLength)
     if (t === XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE || t === XPathResult.ORDERED_NODE_SNAPSHOT_TYPE) {
       const nodes = [];
       for (let i = 0; i < r.snapshotLength; i++) nodes.push(r.snapshotItem(i));
       return { type:'nodeset', nodes, value:null };
     }
-    // Iterator types (4 or 5) — use iterateNext()
-    {
-      const nodes = [];
-      let n;
-      while ((n = r.iterateNext()) !== null) nodes.push(n);
-      return { type:'nodeset', nodes, value:null };
-    }
+    const nodes = [];
+    let n;
+    while ((n = r.iterateNext()) !== null) nodes.push(n);
+    return { type:'nodeset', nodes, value:null };
   },
-
-  // ── Main evaluate entry point ─────────────────────────
   evaluate(xp, doc) {
-    // Try native XPath 1.0 first (ANY_TYPE to handle scalars)
     try {
       const r = doc.evaluate(xp, doc, null, XPathResult.ANY_TYPE, null);
       const result = this.processResult(r);
       return { ...result, engine:'XPath 1.0', transpiled:null, error:null };
     } catch(_) {}
-
-    // Try polyfill transpilation
     let tp = this.transpile(xp);
     const mi = this.extractMatches(tp);
     tp = mi.cleaned;
     const jsi = this.extractJsFns(tp);
     tp = jsi.cleaned;
-
-    // If entire expression was replaced by a JS function placeholder,
-    // evaluate it directly
     const plainMatch = tp.trim().match(/^"__jsfn_(\d+)__"$/);
     if (plainMatch) {
       const idx = parseInt(plainMatch[1]);
@@ -1369,17 +1278,12 @@ const XPoly = {
         if (res) return { ...res, engine:'XPath 3.0 (polyfill)', transpiled: tp !== xp ? xp : null, error:null };
       }
     }
-
     try {
       const r = doc.evaluate(tp, doc, null, XPathResult.ANY_TYPE, null);
       let result = this.processResult(r);
-
-      // Apply match filter (from matches() polyfill)
       if (mi.calls.length && result.type === 'nodeset') {
         result.nodes = this.applyFilter(result.nodes, mi.calls);
       }
-
-      // Apply JS-fn substitutions in string results
       if (result.type === 'string') {
         result.value = result.value.replace(/"__jsfn_(\d+)__"/g, (_, i) => {
           const call = jsi.calls[parseInt(i)];
@@ -1388,14 +1292,12 @@ const XPoly = {
           return res ? String(res.value) : '';
         });
       }
-
       const engine = this.detectEngine(xp);
       return { ...result, engine, transpiled: tp !== xp ? tp : null, error:null };
     } catch(e2) {
       return { type:'nodeset', nodes:null, engine:null, transpiled:null, error:e2.message };
     }
   },
-
   detectEngine(xp) {
     if (/tokenize|serialize|has-children|path\(|abs\(|math:|=>|\|\||string-to-code|codepoints-to/.test(xp))
       return 'XPath 3.0 (polyfill)';
@@ -1541,7 +1443,7 @@ function switchView(v) {
   const rawEl = document.getElementById('xml-raw');
   const treeEl = document.getElementById('tree-container');
   if (v === 'raw') {
-    rawEl.style.display = 'block';   // FIX: explicit display value
+    rawEl.style.display = 'block';
     treeEl.classList.remove('active');
   } else {
     rawEl.style.display = 'none';
@@ -1592,11 +1494,9 @@ function buildNode(node, depth) {
   const directText = Array.from(node.childNodes)
     .filter(c => c.nodeType === Node.TEXT_NODE && c.textContent.trim())
     .map(c => c.textContent.trim()).join('');
-
   const line = document.createElement('div');
   line.className = 'tree-node-line';
-  node._tl = line;  // Store reference for highlight
-
+  node._tl = line;
   for (let i = 0; i < depth; i++) {
     const s = document.createElement('span');
     s.className = 'tree-indent';
@@ -1606,7 +1506,6 @@ function buildNode(node, depth) {
   tog.className = 'tree-toggle' + (hasKids ? ' open' : ' leaf');
   tog.textContent = '\u25ba';
   line.appendChild(tog);
-
   const span = document.createElement('span');
   let h = `<span class="tb">&lt;</span><span class="tn">${esc(node.tagName)}</span>`;
   for (const a of node.attributes)
@@ -1621,7 +1520,6 @@ function buildNode(node, depth) {
   }
   span.innerHTML = h;
   line.appendChild(span);
-
   const kids = document.createElement('div');
   kids.className = 'children';
   if (hasKids) {
@@ -1727,7 +1625,6 @@ function ctxXPath(node) {
     parts.unshift(part);
     n = n.parentNode; d++;
   }
-  // FIX: avoid double // if parts already covers from root
   return '//' + parts.join('/');
 }
 
@@ -1739,41 +1636,30 @@ function evaluateXPath() {
   const input = document.getElementById('xpath-input');
   const list = document.getElementById('result-list');
   hideAc();
-
   if (!xp) { showToast('Enter an XPath expression'); return; }
   if (!parsedDoc) { showToast('Paste valid XML or upload an XML file first'); return; }
-
   matchedNodes.clear();
   list.innerHTML = '';
   hideFeedback();
   input.className = '';
-
   const { type, value, nodes, items, engine, transpiled, error } = XPoly.evaluate(xp, parsedDoc);
-
   if (error) {
     input.className = 'xpath-err';
     showError(diagnoseXPathError(xp, error));
     return;
   }
-
   input.className = 'xpath-ok';
-
-  // ── Scalar result (string, number, boolean) ───────────
   if (type !== 'nodeset' && type !== 'sequence') {
     showFeedback('success', 1, type);
     renderScalarResult(type, value, engine, transpiled, list);
     return;
   }
-
-  // ── Sequence result (tokenize, string-to-codepoints) ──
   if (type === 'sequence') {
     const seqItems = items || [];
     showFeedback('success', seqItems.length, 'sequence');
     seqItems.forEach((item, i) => renderScalarResult(item.type, item.value, engine, i === 0 ? transpiled : null, list, i + 1));
     return;
   }
-
-  // ── Node-set result ───────────────────────────────────
   if (!nodes || !nodes.length) {
     showFeedback('warn', 'No matching nodes found for this expression.');
   } else {
@@ -1783,10 +1669,7 @@ function evaluateXPath() {
       renderResultItem(node, i, list, engine, i === 0 ? transpiled : null);
     });
   }
-
   if (currentView === 'tree') applyHighlights();
-
-  // On mobile, switch to xpath panel after evaluating
   if (window.innerWidth <= 768 && _mobileActive === 'xml') {
     switchMobileTab('xpath');
   }
@@ -1931,7 +1814,7 @@ function svgW()   { return `<svg width="15" height="15" viewBox="0 0 24 24" fill
 function svgFix() { return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`; }
 
 // ════════════════════════════════════════════════════════
-// COPY / EDIT / USE  (FIX: btn passed by caller)
+// COPY / EDIT / USE
 // ════════════════════════════════════════════════════════
 function copyXP(type, btn) {
   const txt = document.getElementById(type + '-xpath').textContent.trim();
@@ -2016,7 +1899,6 @@ function showToast(msg, type) {
 .ex-section-sub{
   font-size:13px;color:var(--text3);line-height:1.5;
 }
-/* shared XML panel */
 .ex-xml-panel{
   background:var(--surface);border:1.5px solid var(--border2);border-radius:10px;
   overflow:hidden;margin-bottom:24px;
@@ -2049,8 +1931,6 @@ function showToast(msg, type) {
   transition:all .15s;
 }
 .ex-load-xml-btn:hover{background:var(--brand-muted);border-color:var(--brand);}
-
-/* version tabs */
 .ex-tabs{display:flex;gap:0;border:1.5px solid var(--border2);border-radius:8px;
   overflow:hidden;margin-bottom:20px;width:fit-content;}
 .ex-tab{
@@ -2067,12 +1947,8 @@ function showToast(msg, type) {
 }
 .ex-tab.active .ex-tab-badge{background:rgba(255,255,255,.25);color:#fff;}
 .ex-tab:not(.active) .ex-tab-badge{background:var(--brand-pale);color:var(--brand-dark);}
-
-/* tab panels */
 .ex-panel{display:none;}
 .ex-panel.active{display:block;}
-
-/* version header strip */
 .ex-version-strip{
   display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;
   border-radius:8px;border-left:4px solid var(--brand);
@@ -2090,8 +1966,6 @@ function showToast(msg, type) {
 .v3-tag{background:#4a6cf7;color:#fff;}
 .v31-tag{background:#8b5cf6;color:#fff;}
 .ex-version-strip-desc{font-size:12.5px;color:var(--text2);line-height:1.5;}
-
-/* cards grid */
 .ex-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
@@ -2141,8 +2015,6 @@ function showToast(msg, type) {
 .ex-try-v3:hover{background:#4a6cf7;color:#fff;}
 .ex-try-v31{background:#f3efff;color:#6d35c9;border:1.5px solid #ddd6fe;}
 .ex-try-v31:hover{background:#8b5cf6;color:#fff;}
-
-/* note cards */
 .ex-note{
   display:flex;align-items:flex-start;gap:10px;padding:10px 14px;
   background:var(--warn-bg);border:1.5px solid var(--warn-border);
@@ -2150,8 +2022,6 @@ function showToast(msg, type) {
   line-height:1.55;margin-bottom:14px;
 }
 .ex-note svg{flex-shrink:0;margin-top:1px;}
-
-/* scroll-to-examples btn */
 .ex-scroll-hint{
   position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;gap:4px;
@@ -2162,8 +2032,6 @@ function showToast(msg, type) {
 .ex-scroll-hint:hover{opacity:1;}
 @keyframes ex-bounce{0%,100%{transform:translateX(-50%) translateY(0);}
   50%{transform:translateX(-50%) translateY(5px);}}
-
-/* mobile responsive */
 @media(max-width:768px){
   .ex-section{padding:20px 12px 36px;}
   .ex-tabs{flex-wrap:wrap;width:100%;}
@@ -2177,9 +2045,7 @@ function showToast(msg, type) {
 }
 </style>
 
-<!-- Scroll hint on the editor -->
 <script>
-// Inject scroll hint button into editor-wrap after DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   const wrap = document.querySelector('.editor-wrap');
   if (!wrap) return;
@@ -2193,7 +2059,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<!-- ──────────────────────────── EXAMPLES HTML ── -->
 <section class="ex-section" id="ex-section">
 
   <div class="ex-section-hdr">
@@ -2204,7 +2069,6 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="ex-section-sub">Click <strong>Try It</strong> on any example to load it into the editor above.</div>
   </div>
 
-  <!-- Shared XML panel -->
   <div class="ex-xml-panel">
     <div class="ex-xml-toggle" onclick="toggleExXml()">
       <div class="ex-xml-toggle-left">
@@ -2255,23 +2119,13 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   </div>
 
-  <!-- Version tabs -->
   <div class="ex-tabs" role="tablist">
-    <button class="ex-tab active" id="ex-tab-v1" onclick="switchExTab('v1')" role="tab">
-      XPath 1.0 <span class="ex-tab-badge">12</span>
-    </button>
-    <button class="ex-tab" id="ex-tab-v2" onclick="switchExTab('v2')" role="tab">
-      XPath 2.0 <span class="ex-tab-badge">10</span>
-    </button>
-    <button class="ex-tab" id="ex-tab-v3" onclick="switchExTab('v3')" role="tab">
-      XPath 3.0 <span class="ex-tab-badge">10</span>
-    </button>
-    <button class="ex-tab" id="ex-tab-v31" onclick="switchExTab('v31')" role="tab">
-      XPath 3.1 <span class="ex-tab-badge">6</span>
-    </button>
+    <button class="ex-tab active" id="ex-tab-v1" onclick="switchExTab('v1')" role="tab">XPath 1.0 <span class="ex-tab-badge">12</span></button>
+    <button class="ex-tab" id="ex-tab-v2" onclick="switchExTab('v2')" role="tab">XPath 2.0 <span class="ex-tab-badge">10</span></button>
+    <button class="ex-tab" id="ex-tab-v3" onclick="switchExTab('v3')" role="tab">XPath 3.0 <span class="ex-tab-badge">10</span></button>
+    <button class="ex-tab" id="ex-tab-v31" onclick="switchExTab('v31')" role="tab">XPath 3.1 <span class="ex-tab-badge">6</span></button>
   </div>
 
-  <!-- ═══ XPath 1.0 panel ═══ -->
   <div class="ex-panel active" id="ex-panel-v1">
     <div class="ex-version-strip ex-v1-strip">
       <span class="ex-version-strip-tag v1-tag">XPath 1.0</span>
@@ -2280,7 +2134,6 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="ex-grid" id="ex-grid-v1"></div>
   </div>
 
-  <!-- ═══ XPath 2.0 panel ═══ -->
   <div class="ex-panel" id="ex-panel-v2">
     <div class="ex-version-strip ex-v2-strip">
       <span class="ex-version-strip-tag v2-tag">XPath 2.0</span>
@@ -2289,7 +2142,6 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="ex-grid" id="ex-grid-v2"></div>
   </div>
 
-  <!-- ═══ XPath 3.0 panel ═══ -->
   <div class="ex-panel" id="ex-panel-v3">
     <div class="ex-version-strip ex-v3-strip">
       <span class="ex-version-strip-tag v3-tag">XPath 3.0</span>
@@ -2298,7 +2150,6 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="ex-grid" id="ex-grid-v3"></div>
   </div>
 
-  <!-- ═══ XPath 3.1 panel ═══ -->
   <div class="ex-panel" id="ex-panel-v31">
     <div class="ex-version-strip ex-v31-strip">
       <span class="ex-version-strip-tag v31-tag">XPath 3.1</span>
@@ -2314,9 +2165,6 @@ document.addEventListener('DOMContentLoaded', () => {
 </section>
 
 <script>
-// ════════════════════════════════════════════════════════
-// SHARED SAMPLE XML
-// ════════════════════════════════════════════════════════
 const SAMPLE_XML = `<bookstore>
   <book category="fiction" id="b1">
     <title lang="en">The Great Gatsby</title>
@@ -2348,9 +2196,6 @@ const SAMPLE_XML = `<bookstore>
   </book>
 </bookstore>`;
 
-// ════════════════════════════════════════════════════════
-// EXAMPLE DATA
-// ════════════════════════════════════════════════════════
 const EXAMPLES = {
   v1: [
     { fn:'Navigation', expr:'//book', desc:'Select all &lt;book&gt; elements anywhere in the document.', result:'4 nodes' },
@@ -2400,16 +2245,9 @@ const EXAMPLES = {
   ],
 };
 
-// ════════════════════════════════════════════════════════
-// RENDER EXAMPLES
-// ════════════════════════════════════════════════════════
-function escEx(s) {
-  return s; // already HTML-safe in the data; expr is escaped per-card below
-}
 function escExpr(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-// Strip HTML tags to get the raw XPath string for the editor
 function stripHtml(s) {
   return s.replace(/<[^>]*>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
           .replace(/&amp;/g,'&').replace(/&quot;/g,'"');
@@ -2439,39 +2277,25 @@ function renderExamples() {
   });
 }
 
-// ════════════════════════════════════════════════════════
-// TRY EXAMPLE  — load XML + XPath into editor
-// ════════════════════════════════════════════════════════
 function tryExample(version, idx) {
   const ex = EXAMPLES[version][idx];
   if (!ex) return;
-
-  // 1. Load sample XML if editor is empty or has different content
   const xmlTa = document.getElementById('xml-raw');
   if (!xmlTa.value.trim() || !xmlTa.value.includes('<bookstore>')) {
-    loadExampleXml(false); // silent load
+    loadExampleXml(false);
   }
-
-  // 2. Load XPath expression (strip any HTML tags used in display)
   const rawExpr = stripHtml(ex.expr);
   const xpInput = document.getElementById('xpath-input');
   xpInput.value = rawExpr;
   if (typeof autoGrowXpTa === 'function') autoGrowXpTa(xpInput);
-
-  // 3. Scroll to editor top
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  // 4. On mobile: switch to xpath panel so result is visible
   if (window.innerWidth <= 768 && typeof switchMobileTab === 'function') {
     switchMobileTab('xpath');
   }
-
-  // 5. Trigger evaluation after a short delay (so XML is parsed)
   setTimeout(() => {
     if (typeof evaluateXPath === 'function') evaluateXPath();
     xpInput.focus();
   }, 150);
-
   showToast('\u2713 Loaded — hit Evaluate or press Enter');
 }
 
@@ -2484,9 +2308,6 @@ function loadExampleXml(doToast) {
   if (doToast !== false) showToast('\u2713 bookstore.xml loaded into editor');
 }
 
-// ════════════════════════════════════════════════════════
-// TAB SWITCHING
-// ════════════════════════════════════════════════════════
 function switchExTab(v) {
   ['v1','v2','v3','v31'].forEach(id => {
     document.getElementById('ex-tab-' + id).classList.toggle('active', id === v);
@@ -2494,25 +2315,16 @@ function switchExTab(v) {
   });
 }
 
-// ════════════════════════════════════════════════════════
-// TOGGLE SHARED XML PANEL
-// ════════════════════════════════════════════════════════
 function toggleExXml() {
   const body = document.getElementById('ex-xml-body');
   const chev = document.getElementById('ex-xml-chevron');
   const isOpen = body.classList.toggle('open');
   chev.classList.toggle('open', isOpen);
-  const toggle = chev.closest('.ex-xml-toggle') || document.querySelector('.ex-xml-toggle');
-  const hint = toggle.querySelector('span:last-of-type');
-  // update hint text
   document.querySelectorAll('.ex-xml-toggle .ex-xml-toggle-right span:not(.ex-xml-chevron)').forEach(el => {
     el.textContent = isOpen ? 'Click to collapse' : 'Click to expand';
   });
 }
 
-// ════════════════════════════════════════════════════════
-// INIT
-// ════════════════════════════════════════════════════════
 renderExamples();
 </script>
 
